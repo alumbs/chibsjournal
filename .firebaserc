@@ -1,0 +1,14 @@
+{
+  "targets": {
+    "sampleangapp": {
+      "hosting": {
+        "ChibsJournal": [
+          "chibsjournal"
+        ]
+      }
+    }
+  },
+  "projects": {
+    "default": "sampleangapp"
+  }
+}

@@ -1,0 +1,53 @@
+<div #mainContainer class="container">
+    <p-sidebar [visible]="visible" [dismissible]="false" [showCloseIcon]="false">
+        <p-scrollPanel [style]="{width: '100%', height: '100%'}">
+            <h4>Journal Entries</h4>
+            <ul class="journalEntries">
+                <li *ngFor="let entry of journalEntries$ | async" class="singleJournalEntry">
+                    <a (click)="setActiveEntry(entry)">{{entry.title}}</a>
+                </li>
+            </ul>
+        </p-scrollPanel>
+    </p-sidebar>
+    <div class="main-content">
+        <div *ngIf="activeJournalEntry; else noActiveJournalEntry">
+            <div class="card flex justify-content-center mb-1">
+                <p-button *ngIf="activeJournalEntry.id" class="mr-1" icon="pi pi-plus" label="New Entry"
+                    styleClass="p-button p-button-rounded p-button-help p-button-outlined"
+                    (onClick)="createNewActiveEntry()"></p-button>
+
+                <p-button [label]="activeJournalEntry.id ? 'Update Entry' : 'Save Entry'"
+                    (onClick)="saveActiveEntry()"></p-button>
+            </div>
+
+            <input class="entryTitle mb-1" type="text" pInputText placeholder="Journal Entry Title - Date" name="title"
+                id="title" [(ngModel)]="activeJournalEntry.title">
+
+            <div class="mb-1">
+                <label>Created Date</label>: <p-calendar
+                    [(ngModel)]="activeJournalEntry.createdDateAsDate"></p-calendar>
+            </div>
+
+            <p-editor [(ngModel)]="activeJournalEntry.content" [style]="{ height: '500px' }">
+            </p-editor>
+
+            <div class="mt-1">
+                <p-button [label]="activeJournalEntry.id ? 'Update Entry' : 'Save Entry'"
+                    (onClick)="saveActiveEntry()"></p-button>
+            </div>
+
+        </div>
+
+
+        <ng-template #noActiveJournalEntry>
+            <div class="mb-1">
+                No Journal entry is selected. Please select a journal entry or create a new one
+            </div>
+
+            <p-button icon="pi pi-plus" label="New Entry" class="mt-1"
+                styleClass="p-button p-button-rounded p-button-help p-button-outlined"
+                (onClick)="createNewActiveEntry()"></p-button>
+
+        </ng-template>
+    </div>
+</div>
