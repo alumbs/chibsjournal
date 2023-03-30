@@ -8,8 +8,8 @@
                 <ul class="journalEntries">
                     <li *ngFor="let entry of journalEntries$ | async" class="singleJournalEntry">
                         <div class="deleteJournalEntrySection">
-                            <i class="mr-1 mt-1 pi pi-times  deleteJournalEntryIcon" (click)="deleteJournalEntry(entry)"
-                                title="delete journal entry"></i>
+                            <i class="mr-1 mt-1 pi pi-times  deleteJournalEntryIcon"
+                                (click)="deleteJournalEntry($event, entry)" title="delete journal entry"></i>
                         </div>
                         <a (click)="setActiveEntry(entry)">{{entry.title}}</a>
                     </li>
@@ -33,11 +33,13 @@
         <div *ngIf="activeJournalEntry; else noActiveJournalEntry">
             <div class="card flex justify-content-center mb-1">
                 <p-button *ngIf="activeJournalEntry.id" class="mr-1" icon="pi pi-plus" label="New Entry"
-                    styleClass="p-button p-button-rounded p-button-help p-button-outlined"
-                    (onClick)="createNewActiveEntry()"></p-button>
+                    styleClass="p-button p-button-rounded p-button-help" (onClick)="createNewActiveEntry()"></p-button>
 
-                <p-button [label]="activeJournalEntry.id ? 'Update Entry' : 'Save Entry'"
-                    (onClick)="saveActiveEntry()"></p-button>
+                <p-button [label]="activeJournalEntry.id ? 'Update Entry' : 'Save Entry'" class="mr-1"
+                    styleClass="p-button p-button-rounded p-button-success" (onClick)="saveActiveEntry()"></p-button>
+
+                <p-button *ngIf="activeJournalEntry.id" styleClass="p-button p-button-rounded p-button-danger"
+                    [label]="'Delete Entry'" (onClick)="deleteJournalEntry($event, activeJournalEntry)"></p-button>
             </div>
 
             <input class="entryTitle mb-1" type="text" pInputText placeholder="Journal Entry Title - Date" name="title"
@@ -55,7 +57,7 @@
 
             <div class="mt-1">
                 <p-button [label]="activeJournalEntry.id ? 'Update Entry' : 'Save Entry'"
-                    (onClick)="saveActiveEntry()"></p-button>
+                    styleClass="p-button p-button-rounded p-button-success" (onClick)="saveActiveEntry()"></p-button>
             </div>
 
         </div>
@@ -67,8 +69,7 @@
             </div>
 
             <p-button icon="pi pi-plus" label="New Entry" class="mt-1"
-                styleClass="p-button p-button-rounded p-button-help p-button-outlined"
-                (onClick)="createNewActiveEntry()"></p-button>
+                styleClass="p-button p-button-rounded p-button-help" (onClick)="createNewActiveEntry()"></p-button>
 
         </ng-template>
     </div>

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc } from '@angular/fire/firestore';
-import { MessageService } from 'primeng/api';
+import { getDoc } from '@firebase/firestore';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { BehaviorSubject, map, mergeMap, Observable, take, tap } from 'rxjs';
 
 interface JournalEntry {
@@ -52,8 +53,9 @@ export class HomeComponent {
   // // Parsing Date from string using JavaScript Date object
   // var date = new Date(Date.parse(dateString));
 
-  constructor(private firestore: Firestore, private messageService: MessageService) {
+  constructor(private firestore: Firestore, private messageService: MessageService, private confirmationService: ConfirmationService) {
     this.journalEntries$ = this.activeJournalList$.pipe(
+      tap(_ => this.activeJournalEntry = undefined),
       map(journalList => this.getFirestoreJournalCollection(journalList)),
       mergeMap(journalCollection => collectionData(journalCollection, { idField: 'id' })),
       tap((docArray) => {
@@ -95,11 +97,18 @@ export class HomeComponent {
 
 
           if (this.activeJournalEntry.id === undefined) {
-            addDoc(journalCollection, { ...this.activeJournalEntry, createdDate }).then(_result => {
+            addDoc(journalCollection, { ...this.activeJournalEntry, createdDate }).then(result => {
               this.messageService.add({
                 severity: 'success',
-                summary: `Add of ${this.activeJournalEntry?.title} Successful`,
-                data: 'Journal Entry Added Successfully'
+                summary: 'Journal Entry Added Successfully',
+                detail: `Add of ${this.activeJournalEntry?.title} Successful`
+              });
+
+              // After creating a new document, load it
+              getDoc(result).then(newDoc => {
+                const doc = { id: newDoc.id, ...newDoc.data() } as JournalEntry;
+                const createdDateAsDate = new Date(Date.parse(doc.createdDate))
+                this.activeJournalEntry = { ...doc, createdDateAsDate };
               });
             });
           } else {
@@ -110,8 +119,8 @@ export class HomeComponent {
               .then(_result => {
                 this.messageService.add({
                   severity: 'success',
-                  summary: `Update of ${this.activeJournalEntry?.title} Successful`,
-                  data: 'Update Occurred Successfully'
+                  summary: 'Update Occurred Successfully',
+                  detail: `Update of ${this.activeJournalEntry?.title} Successful`
                 });
               })
               .catch(error => {
@@ -124,31 +133,46 @@ export class HomeComponent {
     ).subscribe();
   }
 
-  deleteJournalEntry(entry: JournalEntry) {
-    this.activeJournalList$.pipe(
-      take(1),
-      tap(currentActiveJournal => {
-        if (entry) {
-          const entryName = entry.title;
-          const createdDate = entry.createdDateAsDate ? entry.createdDateAsDate.toISOString() : new Date().toISOString();
+  deleteJournalEntry(event: Event, entry: JournalEntry) {
+    this.confirmationService.confirm({
+      target: event.target || undefined,
+      message: `Are you sure that you want to delete this journal entry ${entry?.title}`,
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.activeJournalList$.pipe(
+          take(1),
+          tap(currentActiveJournal => {
+            if (entry) {
+              const entryName = entry.title;
+              const createdDate = entry.createdDateAsDate ? entry.createdDateAsDate.toISOString() : new Date().toISOString();
 
-          const docRef = doc(this.firestore, currentActiveJournal.firebasePath, entry.id);
+              const docRef = doc(this.firestore, currentActiveJournal.firebasePath, entry.id);
 
-          updateDoc(docRef, { ...entry, createdDate, updatedDate: new Date().toISOString(), deleted: true })
-            .then(_result => {
-              this.messageService.add({
-                severity: 'success',
-                summary: `Delete of ${entryName} Successful`,
-                data: 'Delete Occurred Successfully'
-              });
-            })
-            .catch(error => {
-              console.log(error);
-            });
-        }
+              updateDoc(docRef, { ...entry, createdDate, updatedDate: new Date().toISOString(), deleted: true })
+                .then(_result => {
+                  this.messageService.add({
+                    severity: 'success',
+                    summary: 'Delete Occurred Successfully',
+                    detail: `Delete of ${entryName} Successful`
+                  });
 
-      })
-    ).subscribe();
+                  if (this.activeJournalEntry?.id === entry.id) {
+                    this.activeJournalEntry = undefined;
+                  }
+                })
+                .catch(error => {
+                  console.log(error);
+                });
+            }
+
+          })
+        ).subscribe();
+      },
+      reject: () => {
+        this.messageService.add({ severity: 'error', summary: 'Delete Cancelled', detail: 'Delete cancelled' });
+      }
+    });
+
 
     // True Delete 
     // this.activeJournalList$.pipe(
