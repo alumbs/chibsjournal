@@ -22,9 +22,8 @@
         <i class="mb-3 pi pi-align-justify text-2xl text-color-secondary" (click)="visible = !visible"></i>
 
         <div class="activeJournalList mb-1">
-            <label for="">The Active Journal List is: </label> {{(activeJournalList$ | async)?.name}}
 
-            <div class="mt-1">
+            <div>
                 <label for="" class="mr-1">Change The Active Journal List</label>
                 <p-dropdown [options]="journalLists" [ngModel]="(activeJournalList$ | async)" optionLabel="name"
                     (ngModelChange)="activeJournalList$.next($event)"></p-dropdown>
@@ -42,16 +41,21 @@
                     [label]="'Delete Entry'" (onClick)="deleteJournalEntry($event, activeJournalEntry)"></p-button>
             </div>
 
-            <input class="entryTitle mb-1" type="text" pInputText placeholder="Journal Entry Title - Date" name="title"
-                id="title" [(ngModel)]="activeJournalEntry.title" autofocus>
+            <div class="journalHeader">
+                <div class="mr-1">
+                    <h3>Title</h3>
+                    <input class="entryTitle mb-1 mr-1" type="text" pInputText placeholder="Journal Entry Title - Date"
+                        name="title" id="title" [(ngModel)]="activeJournalEntry.title" autofocus>
+                </div>
 
-            <div class="mb-1">
-                <label>Created Date</label>: <p-calendar
-                    [(ngModel)]="activeJournalEntry.createdDateAsDate"></p-calendar>
+                <div class="mb-1">
+                    <h3>Created Date</h3> <p-calendar [(ngModel)]="activeJournalEntry.createdDateAsDate"></p-calendar>
+                </div>
             </div>
 
+
             <p-editor #editor required [(ngModel)]="activeJournalEntry.content" class="pEditor"
-                [style]="{ height: '500px' }">
+                [style]="{ height: '280px' }">
 
             </p-editor>
 

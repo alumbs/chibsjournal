@@ -8,6 +8,20 @@
     }
 }
 
+.journalHeader {
+    display: flex;
+    flex-direction: row;
+
+    >div {
+        flex-grow: 1;
+        flex-shrink: 0;
+
+        h3 {
+            margin-top: 0;
+        }
+    }
+}
+
 .text-2xl {
     font-size: 2rem;
     margin-bottom: 1rem;
