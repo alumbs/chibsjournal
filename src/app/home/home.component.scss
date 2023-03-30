@@ -30,6 +30,17 @@
     li.singleJournalEntry {
         list-style-type: none;
 
+        .deleteJournalEntrySection {
+            display: flex;
+            justify-content: end;
+
+            .deleteJournalEntryIcon {
+                color: firebrick;
+
+            }
+        }
+
+
         &:nth-child(odd) {
             background-color: cadetblue;
         }

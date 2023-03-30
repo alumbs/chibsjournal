@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc } from '@angular/fire/firestore';
+import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc } from '@angular/fire/firestore';
 import { BehaviorSubject, map, mergeMap, Observable, take, tap } from 'rxjs';
 
 interface JournalEntry {
@@ -9,6 +9,7 @@ interface JournalEntry {
   createdDate: string,
   createdDateAsDate: Date,
   updatedDate: string,
+  deleted: boolean
 };
 
 interface JournalList {
@@ -58,10 +59,14 @@ export class HomeComponent {
         console.log('docArray', docArray);
       }),
       map((docArray) => {
-        return (docArray as JournalEntry[]).map((doc) => {
-          const createdDateAsDate = new Date(Date.parse(doc.createdDate))
-          return { ...doc, createdDateAsDate }
-        })
+        return (docArray as JournalEntry[])
+          .filter(doc => {
+            return doc.deleted === undefined || doc.deleted === false
+          })
+          .map((doc) => {
+            const createdDateAsDate = new Date(Date.parse(doc.createdDate))
+            return { ...doc, createdDateAsDate }
+          })
           .sort((a, b) => {
             const dateA = a.createdDateAsDate;//new Date(Date.parse(a.createdDate));
             const dateB = b.createdDateAsDate;//new Date(Date.parse(b.createdDate));
@@ -76,7 +81,7 @@ export class HomeComponent {
   }
 
   createNewActiveEntry() {
-    this.activeJournalEntry = { title: `${new Date().toDateString()} - `, content: '', createdDate: new Date().toISOString(), createdDateAsDate: new Date() } as JournalEntry;
+    this.activeJournalEntry = { title: `${new Date().toDateString()} - `, content: '', createdDate: new Date().toISOString(), createdDateAsDate: new Date(), deleted: false } as JournalEntry;
   }
 
   saveActiveEntry() {
@@ -106,6 +111,37 @@ export class HomeComponent {
 
       })
     ).subscribe();
+  }
+
+  deleteJournalEntry(entry: JournalEntry) {
+    this.activeJournalList$.pipe(
+      take(1),
+      tap(currentActiveJournal => {
+        if (entry) {
+          const createdDate = entry.createdDateAsDate ? entry.createdDateAsDate.toISOString() : new Date().toISOString();
+
+          const docRef = doc(this.firestore, currentActiveJournal.firebasePath, entry.id);
+
+          updateDoc(docRef, { ...entry, createdDate, updatedDate: new Date().toISOString(), deleted: true })
+            .catch(error => {
+              console.log(error);
+            });
+        }
+
+      })
+    ).subscribe();
+
+    // True Delete 
+    // this.activeJournalList$.pipe(
+    //   take(1),
+    //   tap(currentActiveJournal => {
+    //     if (entry) {
+    //       const docRef = doc(this.firestore, currentActiveJournal.firebasePath, entry.id);
+
+    //       deleteDoc(docRef);
+    //     }
+    //   })
+    // ).subscribe();
   }
 
   getFirestoreJournalCollection(newActiveJournalList: JournalList): CollectionReference<DocumentData> {
