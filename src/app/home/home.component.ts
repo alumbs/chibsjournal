@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc } from '@angular/fire/firestore';
+import { MessageService } from 'primeng/api';
 import { BehaviorSubject, map, mergeMap, Observable, take, tap } from 'rxjs';
 
 interface JournalEntry {
@@ -51,7 +52,7 @@ export class HomeComponent {
   // // Parsing Date from string using JavaScript Date object
   // var date = new Date(Date.parse(dateString));
 
-  constructor(private firestore: Firestore) {
+  constructor(private firestore: Firestore, private messageService: MessageService) {
     this.journalEntries$ = this.activeJournalList$.pipe(
       map(journalList => this.getFirestoreJournalCollection(journalList)),
       mergeMap(journalCollection => collectionData(journalCollection, { idField: 'id' })),
@@ -94,14 +95,24 @@ export class HomeComponent {
 
 
           if (this.activeJournalEntry.id === undefined) {
-            addDoc(journalCollection, { ...this.activeJournalEntry, createdDate });
+            addDoc(journalCollection, { ...this.activeJournalEntry, createdDate }).then(_result => {
+              this.messageService.add({
+                severity: 'success',
+                summary: `Add of ${this.activeJournalEntry?.title} Successful`,
+                data: 'Journal Entry Added Successfully'
+              });
+            });
           } else {
             const docRef = doc(this.firestore, currentActiveJournal.firebasePath, this.activeJournalEntry.id);
 
 
             updateDoc(docRef, { ...this.activeJournalEntry, createdDate, updatedDate: new Date().toISOString() })
-              .then(docRef => {
-                console.log("A New Document Field has been added to an existing document");
+              .then(_result => {
+                this.messageService.add({
+                  severity: 'success',
+                  summary: `Update of ${this.activeJournalEntry?.title} Successful`,
+                  data: 'Update Occurred Successfully'
+                });
               })
               .catch(error => {
                 console.log(error);
@@ -118,11 +129,19 @@ export class HomeComponent {
       take(1),
       tap(currentActiveJournal => {
         if (entry) {
+          const entryName = entry.title;
           const createdDate = entry.createdDateAsDate ? entry.createdDateAsDate.toISOString() : new Date().toISOString();
 
           const docRef = doc(this.firestore, currentActiveJournal.firebasePath, entry.id);
 
           updateDoc(docRef, { ...entry, createdDate, updatedDate: new Date().toISOString(), deleted: true })
+            .then(_result => {
+              this.messageService.add({
+                severity: 'success',
+                summary: `Delete of ${entryName} Successful`,
+                data: 'Delete Occurred Successfully'
+              });
+            })
             .catch(error => {
               console.log(error);
             });
@@ -147,7 +166,7 @@ export class HomeComponent {
   getFirestoreJournalCollection(newActiveJournalList: JournalList): CollectionReference<DocumentData> {
     const journalListToUse: JournalList = newActiveJournalList;
 
-    console.log('The journalListToUse is', journalListToUse);
+    // console.log('The journalListToUse is', journalListToUse);
 
     const journalCollection = collection(this.firestore, journalListToUse.firebasePath);
     return journalCollection;
