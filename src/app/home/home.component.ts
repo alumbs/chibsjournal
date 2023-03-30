@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc } from '@angular/fire/firestore';
-import { map, Observable, tap } from 'rxjs';
+import { BehaviorSubject, map, mergeMap, Observable, take, tap } from 'rxjs';
 
 interface JournalEntry {
   id: string,
@@ -11,6 +11,12 @@ interface JournalEntry {
   updatedDate: string,
 };
 
+interface JournalList {
+  id: string,
+  name: string,
+  firebasePath: string
+}
+
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
@@ -18,10 +24,23 @@ interface JournalEntry {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeComponent {
+  journalLists: JournalList[] = [
+    {
+      id: 'Chibs',
+      name: 'Chibuzors Journal',
+      firebasePath: 'journal-entries'
+    },
+    {
+      id: 'Katherine',
+      name: 'Katherines Journal',
+      firebasePath: 'katherine-journal-entries'
+    }
+  ];
+
+  activeJournalList$: BehaviorSubject<JournalList> = new BehaviorSubject(this.journalLists[0]);
   visible = true;
 
   journalEntries$: Observable<JournalEntry[]>;
-  // firestore: Firestore = inject(Firestore);
 
   activeJournalEntry: JournalEntry | undefined;
 
@@ -32,12 +51,11 @@ export class HomeComponent {
   // var date = new Date(Date.parse(dateString));
 
   constructor(private firestore: Firestore) {
-    const journalCollection = this.getFirestoreJournalCollection();
-
-    this.journalEntries$ = collectionData(journalCollection, { idField: 'id' }).pipe(
+    this.journalEntries$ = this.activeJournalList$.pipe(
+      map(journalList => this.getFirestoreJournalCollection(journalList)),
+      mergeMap(journalCollection => collectionData(journalCollection, { idField: 'id' })),
       tap((docArray) => {
         console.log('docArray', docArray);
-
       }),
       map((docArray) => {
         return (docArray as JournalEntry[]).map((doc) => {
@@ -62,32 +80,40 @@ export class HomeComponent {
   }
 
   saveActiveEntry() {
-    if (this.activeJournalEntry) {
-      const journalCollection = this.getFirestoreJournalCollection();
-      const createdDate = this.activeJournalEntry.createdDateAsDate ? this.activeJournalEntry.createdDateAsDate.toISOString() : new Date().toISOString();
+    this.activeJournalList$.pipe(
+      take(1),
+      tap(currentActiveJournal => {
+        if (this.activeJournalEntry) {
+          const journalCollection = this.getFirestoreJournalCollection(currentActiveJournal);
+          const createdDate = this.activeJournalEntry.createdDateAsDate ? this.activeJournalEntry.createdDateAsDate.toISOString() : new Date().toISOString();
 
 
-      if (this.activeJournalEntry.id === undefined) {
-        addDoc(journalCollection, { ...this.activeJournalEntry, createdDate });
-      } else {
-        const docRef = doc(this.firestore, 'journal-entries', this.activeJournalEntry.id);
+          if (this.activeJournalEntry.id === undefined) {
+            addDoc(journalCollection, { ...this.activeJournalEntry, createdDate });
+          } else {
+            const docRef = doc(this.firestore, currentActiveJournal.firebasePath, this.activeJournalEntry.id);
 
 
-        updateDoc(docRef, { ...this.activeJournalEntry, createdDate, updatedDate: new Date().toISOString() })
-          .then(docRef => {
-            console.log("A New Document Field has been added to an existing document");
-          })
-          .catch(error => {
-            console.log(error);
-          });
-      }
-    }
+            updateDoc(docRef, { ...this.activeJournalEntry, createdDate, updatedDate: new Date().toISOString() })
+              .then(docRef => {
+                console.log("A New Document Field has been added to an existing document");
+              })
+              .catch(error => {
+                console.log(error);
+              });
+          }
+        }
 
-
+      })
+    ).subscribe();
   }
 
-  getFirestoreJournalCollection(): CollectionReference<DocumentData> {
-    const journalCollection = collection(this.firestore, 'journal-entries');
+  getFirestoreJournalCollection(newActiveJournalList: JournalList): CollectionReference<DocumentData> {
+    const journalListToUse: JournalList = newActiveJournalList;
+
+    console.log('The journalListToUse is', journalListToUse);
+
+    const journalCollection = collection(this.firestore, journalListToUse.firebasePath);
     return journalCollection;
   }
 }

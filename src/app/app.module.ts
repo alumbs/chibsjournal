@@ -16,8 +16,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { EditorModule } from 'primeng/editor';
-import { Firestore, getFirestore } from '@angular/fire/firestore';
+import { getFirestore } from '@angular/fire/firestore';
 import { CalendarModule } from 'primeng/calendar';
+import { DropdownModule } from 'primeng/dropdown';
 
 @NgModule({
   declarations: [
@@ -36,6 +37,7 @@ import { CalendarModule } from 'primeng/calendar';
     EditorModule,
     InputTextModule,
     CalendarModule,
+    DropdownModule,
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
     provideFirestore(() => {

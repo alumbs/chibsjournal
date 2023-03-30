@@ -14,6 +14,16 @@
     </p-sidebar>
     <div class="main-content">
         <i class="mb-3 pi pi-align-justify text-2xl text-color-secondary" (click)="visible = !visible"></i>
+
+        <div class="activeJournalList mb-1">
+            <label for="">The Active Journal List is: </label> {{(activeJournalList$ | async)?.name}}
+
+            <div class="mt-1">
+                <label for="" class="mr-1">Change The Active Journal List</label>
+                <p-dropdown [options]="journalLists" [ngModel]="(activeJournalList$ | async)" optionLabel="name"
+                    (ngModelChange)="activeJournalList$.next($event)"></p-dropdown>
+            </div>
+        </div>
         <div *ngIf="activeJournalEntry; else noActiveJournalEntry">
             <div class="card flex justify-content-center mb-1">
                 <p-button *ngIf="activeJournalEntry.id" class="mr-1" icon="pi pi-plus" label="New Entry"
