@@ -1,10 +1,16 @@
-::ng-deep .p-sidebar-mask {
-    display: none !important;
+::ng-deep {
+    .p-sidebar .p-sidebar-header+.p-sidebar-content {
+        padding: 0;
+    }
+
+    .p-sidebar-mask {
+        display: none !important;
+    }
 }
 
-.container {
-    width: 90%;
-    margin-left: 10%;
+.text-2xl {
+    font-size: 2rem;
+    margin-bottom: 1rem;
 }
 
 .entryTitle {
@@ -12,28 +18,36 @@
     margin-bottom: 0.5rem;
 }
 
-ul.journalEntries {
-    padding-left: 0;
+.sidebarContent {
+    h4 {
+        padding-left: 0.5rem;
+    }
+
+    ul.journalEntries {
+        padding-left: 0;
+    }
+
+    li.singleJournalEntry {
+        list-style-type: none;
+
+        &:nth-child(odd) {
+            background-color: cadetblue;
+        }
+
+        &:nth-child(even) {
+            background-color: lightgrey;
+        }
+
+        a {
+            padding: 1.5rem 0.5rem;
+            display: block;
+
+        }
+
+    }
 }
 
-li.singleJournalEntry {
-    list-style-type: none;
 
-    &:nth-child(odd) {
-        background-color: cadetblue;
-    }
-
-    &:nth-child(even) {
-        background-color: lightgrey;
-    }
-
-    a {
-        padding: 1.5rem 0.3rem;
-        display: block;
-
-    }
-
-}
 
 .mb-1 {
     margin-bottom: 1rem;

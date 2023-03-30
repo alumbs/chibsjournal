@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc } from '@angular/fire/firestore';
 import { map, Observable, tap } from 'rxjs';
 
@@ -14,7 +14,8 @@ interface JournalEntry {
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  styleUrls: ['./home.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeComponent {
   visible = true;
@@ -53,28 +54,22 @@ export class HomeComponent {
   }
 
   setActiveEntry(entry: JournalEntry) {
-    console.log('setActiveEntry', entry);
-
     this.activeJournalEntry = entry;
   }
 
   createNewActiveEntry() {
-    this.activeJournalEntry = { title: '', content: '', createdDate: new Date().toISOString() } as JournalEntry;
+    this.activeJournalEntry = { title: `${new Date().toDateString()} - `, content: '', createdDate: new Date().toISOString(), createdDateAsDate: new Date() } as JournalEntry;
   }
 
   saveActiveEntry() {
-    console.log('this.activeJournalEntry', this.activeJournalEntry);
     if (this.activeJournalEntry) {
       const journalCollection = this.getFirestoreJournalCollection();
       const createdDate = this.activeJournalEntry.createdDateAsDate ? this.activeJournalEntry.createdDateAsDate.toISOString() : new Date().toISOString();
 
 
       if (this.activeJournalEntry.id === undefined) {
-        console.log('Adding a new entry');
-
         addDoc(journalCollection, { ...this.activeJournalEntry, createdDate });
       } else {
-        console.log('updating an entry');
         const docRef = doc(this.firestore, 'journal-entries', this.activeJournalEntry.id);
 
 
