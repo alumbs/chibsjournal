@@ -80,7 +80,7 @@ export class HomeComponent {
     );
 
     this.journalContentUpdate$.pipe(
-      debounceTime(4000),
+      debounceTime(2000),
       distinctUntilChanged())
       .subscribe(_value => {
         this.saveActiveEntry();
