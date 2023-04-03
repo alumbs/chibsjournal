@@ -45,7 +45,8 @@
                 <div class="mr-1">
                     <h3>Title</h3>
                     <input class="entryTitle mb-1 mr-1" type="text" pInputText placeholder="Journal Entry Title - Date"
-                        name="title" id="title" [(ngModel)]="activeJournalEntry.title" autofocus>
+                        name="title" id="title" [(ngModel)]="activeJournalEntry.title"
+                        (ngModelChange)="journalContentUpdate$.next($event)" autofocus>
                 </div>
 
                 <div class="mb-1">
@@ -54,8 +55,8 @@
             </div>
 
 
-            <p-editor #editor required [(ngModel)]="activeJournalEntry.content" class="pEditor"
-                [style]="{ height: '280px' }">
+            <p-editor #editor required [(ngModel)]="activeJournalEntry.content"
+                (ngModelChange)="journalContentUpdate$.next($event)" class="pEditor" [style]="{ height: '280px' }">
 
             </p-editor>
 

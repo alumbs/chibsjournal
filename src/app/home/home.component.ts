@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc } from '@angular/fire/firestore';
 import { getDoc } from '@firebase/firestore';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { BehaviorSubject, map, mergeMap, Observable, take, tap } from 'rxjs';
+import { BehaviorSubject, debounceTime, distinctUntilChanged, map, mergeMap, Observable, Subject, take, tap } from 'rxjs';
 
 interface JournalEntry {
   id: string,
@@ -46,6 +46,7 @@ export class HomeComponent {
   journalEntries$: Observable<JournalEntry[]>;
 
   activeJournalEntry: JournalEntry | undefined;
+  journalContentUpdate$ = new Subject<string>();
 
   //   // Saving Date as string using JavaScript Date object
   // var dateString = new Date().toISOString();
@@ -77,7 +78,15 @@ export class HomeComponent {
           });
       })
     );
+
+    this.journalContentUpdate$.pipe(
+      debounceTime(4000),
+      distinctUntilChanged())
+      .subscribe(_value => {
+        this.saveActiveEntry();
+      });
   }
+
 
   setActiveEntry(entry: JournalEntry) {
     this.activeJournalEntry = entry;
