@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc } from '@angular/fire/firestore';
 import { getDoc } from '@firebase/firestore';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -27,6 +27,28 @@ interface JournalList {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeComponent {
+  modules = {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+      ['blockquote', 'code-block'],
+
+      [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'script': 'sub' }, { 'script': 'super' }],      // superscript/subscript
+      [{ 'indent': '-1' }, { 'indent': '+1' }],          // outdent/indent
+      [{ 'direction': 'rtl' }],                         // text direction
+
+      [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+      [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+      [{ 'font': [] }],
+      [{ 'align': [] }],
+
+      ['clean']                                         // remove formatting button
+    ]
+  }
+
   journalLists: JournalList[] = [
     {
       id: 'Chibs',
@@ -86,7 +108,6 @@ export class HomeComponent {
         this.saveActiveEntry();
       });
   }
-
 
   setActiveEntry(entry: JournalEntry) {
     this.activeJournalEntry = entry;

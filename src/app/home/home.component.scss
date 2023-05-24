@@ -3,8 +3,13 @@
         padding: 0;
     }
 
-    .p-sidebar-mask {
+    .p-sidebar-mask,
+    .p-editor-toolbar {
         display: none !important;
+    }
+
+    .ql-toolbar.ql-snow {
+        background-color: white;
     }
 }
 
