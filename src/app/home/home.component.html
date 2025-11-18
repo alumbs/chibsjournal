@@ -5,6 +5,11 @@
         <p-scrollPanel [style]="{width: '100%', height: '100%'}">
             <div class="sidebarContent">
                 <h4>Journal Entries</h4>
+                <div class="mb-3">
+                    <input type="text" pInputText placeholder="Search entries..." 
+                           class="search-input w-full"
+                           (input)="updateSearchTerm($any($event.target).value)">
+                </div>
                 <ul class="journalEntries">
                     <li *ngFor="let entry of journalEntries$ | async" class="singleJournalEntry">
                         <div class="deleteJournalEntrySection">

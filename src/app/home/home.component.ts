@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc } from '@angular/fire/firestore';
-import { getDoc } from '@firebase/firestore';
+import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc, getDoc } from '@angular/fire/firestore';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { BehaviorSubject, debounceTime, distinctUntilChanged, map, mergeMap, Observable, Subject, take, tap } from 'rxjs';
+import { BehaviorSubject, debounceTime, distinctUntilChanged, map, mergeMap, Observable, Subject, take, tap, combineLatest } from 'rxjs';
 
 interface JournalEntry {
   id: string,
@@ -66,6 +65,7 @@ export class HomeComponent {
   visible = true;
 
   journalEntries$: Observable<JournalEntry[]>;
+  searchTerm$: BehaviorSubject<string> = new BehaviorSubject('');
 
   activeJournalEntry: JournalEntry | undefined;
   journalContentUpdate$ = new Subject<string>();
@@ -77,27 +77,38 @@ export class HomeComponent {
   // var date = new Date(Date.parse(dateString));
 
   constructor(private firestore: Firestore, private messageService: MessageService, private confirmationService: ConfirmationService) {
-    this.journalEntries$ = this.activeJournalList$.pipe(
-      tap(_ => this.activeJournalEntry = undefined),
-      map(journalList => this.getFirestoreJournalCollection(journalList)),
-      mergeMap(journalCollection => collectionData(journalCollection, { idField: 'id' })),
-      tap((docArray) => {
-        console.log('docArray', docArray);
-      }),
-      map((docArray) => {
-        return (docArray as JournalEntry[])
-          .filter(doc => {
-            return doc.deleted === undefined || doc.deleted === false
-          })
-          .map((doc) => {
-            const createdDateAsDate = new Date(Date.parse(doc.createdDate))
-            return { ...doc, createdDateAsDate }
-          })
-          .sort((a, b) => {
-            const dateA = a.createdDateAsDate;//new Date(Date.parse(a.createdDate));
-            const dateB = b.createdDateAsDate;//new Date(Date.parse(b.createdDate));
-            return dateB.getTime() - dateA.getTime();
-          });
+    this.journalEntries$ = combineLatest([
+      this.activeJournalList$.pipe(
+        tap(_ => this.activeJournalEntry = undefined),
+        map(journalList => this.getFirestoreJournalCollection(journalList)),
+        mergeMap(journalCollection => collectionData(journalCollection, { idField: 'id' })),
+        map((docArray) => {
+          return (docArray as JournalEntry[])
+            .filter(doc => {
+              return doc.deleted === undefined || doc.deleted === false
+            })
+            .map((doc) => {
+              const createdDateAsDate = new Date(Date.parse(doc.createdDate))
+              return { ...doc, createdDateAsDate }
+            })
+            .sort((a, b) => {
+              const dateA = a.createdDateAsDate;//new Date(Date.parse(a.createdDate));
+              const dateB = b.createdDateAsDate;//new Date(Date.parse(b.createdDate));
+              return dateB.getTime() - dateA.getTime();
+            });
+        })
+      ),
+      this.searchTerm$.pipe(debounceTime(300))
+    ]).pipe(
+      map(([entries, searchTerm]) => {
+        if (!searchTerm.trim()) {
+          return entries;
+        }
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        return entries.filter(entry =>
+          (entry.title && entry.title.toLowerCase().includes(lowerSearchTerm)) ||
+          (entry.content && entry.content.toLowerCase().includes(lowerSearchTerm))
+        );
       })
     );
 
@@ -111,6 +122,10 @@ export class HomeComponent {
 
   setActiveEntry(entry: JournalEntry) {
     this.activeJournalEntry = entry;
+  }
+
+  updateSearchTerm(searchTerm: string) {
+    this.searchTerm$.next(searchTerm);
   }
 
   createNewActiveEntry() {
