@@ -12,6 +12,23 @@
                 <div class="sidebar-header">
                     <h4>Journal Entries <span class="entry-count-badge">{{entryCount}}</span></h4>
                 </div>
+
+                <!-- Journal List Selector -->
+                <div class="mb-3">
+                    <label class="sidebar-label">Journal List</label>
+                    <p-dropdown [options]="journalLists" [ngModel]="(activeJournalList$ | async)" optionLabel="name"
+                        (ngModelChange)="activeJournalList$.next($event)" [style]="{'width': '100%'}"></p-dropdown>
+                </div>
+
+                <!-- Close Menu Checkbox -->
+                <div class="mb-3">
+                    <p-checkbox [ngModel]="closeMenuOnSelection" 
+                                (ngModelChange)="closeMenuOnSelection = $event"
+                                [binary]="true"
+                                label="Close Menu On Selection" 
+                                inputId="closeMenuCheckbox"></p-checkbox>
+                </div>
+
                 <div class="mb-3">
                     <input type="text" pInputText placeholder="Search entries..." 
                            class="search-input w-full"
@@ -40,14 +57,6 @@
     <div class="main-content" [style.margin-left]="!isMobile && visible ? '300px' : '0px'">
         <i class="mb-3 pi pi-align-justify text-2xl text-color-secondary" (click)="$event.stopPropagation(); visible = !visible"></i>
 
-        <div class="activeJournalList mb-1" (click)="$event.stopPropagation()">
-
-            <div>
-                <label for="" class="mr-1">Change The Active Journal List</label>
-                <p-dropdown [options]="journalLists" [ngModel]="(activeJournalList$ | async)" optionLabel="name"
-                    (ngModelChange)="activeJournalList$.next($event)"></p-dropdown>
-            </div>
-        </div>
         <div *ngIf="activeJournalEntry; else noActiveJournalEntry" (click)="$event.stopPropagation()">
             <div class="card flex justify-content-center mb-1">
                 <p-button *ngIf="activeJournalEntry.id" class="mr-1" icon="pi pi-plus" label="New Entry"
@@ -73,11 +82,19 @@
                 </div>
             </div>
 
-
-            <p-editor #editor required [(ngModel)]="activeJournalEntry.content" [modules]="modules"
-                (ngModelChange)="journalContentUpdate$.next($event)" class="pEditor" [style]="{ height: '280px' }">
-
-            </p-editor>
+            <div class="editor-container">
+                <div class="editor-toolbar-actions mb-1">
+                    <p-button icon="pi pi-window-maximize" 
+                              label="Fullscreen Editor"
+                              styleClass="p-button-sm p-button-info"
+                              (onClick)="openFullscreenEditor()"></p-button>
+                </div>
+                
+                <p-editor #editor required [(ngModel)]="activeJournalEntry.content" [modules]="modules"
+                    (ngModelChange)="journalContentUpdate$.next($event)" 
+                    class="pEditor">
+                </p-editor>
+            </div>
 
             <div class="mt-1">
                 <p-button [label]="activeJournalEntry.id ? 'Update Entry' : 'Save Entry'"
@@ -97,4 +114,12 @@
 
         </ng-template>
     </div>
+
+    <p-dialog header="Fullscreen Editor" [(visible)]="isFullscreen" [modal]="true" [dismissableMask]="true"
+        [closeOnEscape]="true" [style]="{ width: '95vw', maxWidth: '1200px' }" [contentStyle]="{ height: '80vh' }" *ngIf="activeJournalEntry">
+        <div class="fullscreen-editor-body">
+            <p-editor required [(ngModel)]="activeJournalEntry.content" [modules]="modules"
+                (ngModelChange)="journalContentUpdate$.next($event)" class="pEditor fullscreen-editor"></p-editor>
+        </div>
+    </p-dialog>
 </div>

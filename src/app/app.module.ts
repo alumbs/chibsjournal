@@ -22,6 +22,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogModule } from 'primeng/dialog';
+import { CheckboxModule } from 'primeng/checkbox';
 
 @NgModule({
   declarations: [
@@ -43,6 +45,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     DropdownModule,
     ToastModule,
     ConfirmPopupModule,
+    DialogModule,
+    CheckboxModule,
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
     provideFirestore(() => {

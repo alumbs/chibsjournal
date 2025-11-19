@@ -78,6 +78,8 @@ export class HomeComponent {
   activeJournalEntry: JournalEntry | undefined;
   journalContentUpdate$ = new Subject<string>();
   entryCount = 0;
+  isFullscreen = false;
+  closeMenuOnSelection = true; // Default to true - close menu when selecting entries
 
   //   // Saving Date as string using JavaScript Date object
   // var dateString = new Date().toISOString();
@@ -147,6 +149,9 @@ export class HomeComponent {
 
   setActiveEntry(entry: JournalEntry) {
     this.activeJournalEntry = entry;
+    if (this.closeMenuOnSelection) {
+      this.visible = false; // Close sidebar when entry is selected (if enabled)
+    }
   }
 
   updateSearchTerm(searchTerm: string) {
@@ -169,6 +174,12 @@ export class HomeComponent {
     } else if (wasMobile && !this.isMobile) {
       // Switching from mobile to desktop - show sidebar
       this.visible = true;
+    }
+  }
+
+  openFullscreenEditor() {
+    if (this.activeJournalEntry) {
+      this.isFullscreen = true;
     }
   }
 
