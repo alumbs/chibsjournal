@@ -62,13 +62,22 @@ export class HomeComponent {
   ];
 
   activeJournalList$: BehaviorSubject<JournalList> = new BehaviorSubject(this.journalLists[0]);
-  visible = true;
+  visible = true; // Default to visible (desktop behavior)
+  isMobile = false;
 
   journalEntries$: Observable<JournalEntry[]>;
   searchTerm$: BehaviorSubject<string> = new BehaviorSubject('');
+  sortOption$: BehaviorSubject<string> = new BehaviorSubject('newest');
+  sortOption = 'newest';
+  sortOptions = [
+    { label: 'Newest First', value: 'newest' },
+    { label: 'Oldest First', value: 'oldest' },
+    { label: 'Alphabetical', value: 'alphabetical' }
+  ];
 
   activeJournalEntry: JournalEntry | undefined;
   journalContentUpdate$ = new Subject<string>();
+  entryCount = 0;
 
   //   // Saving Date as string using JavaScript Date object
   // var dateString = new Date().toISOString();
@@ -77,6 +86,10 @@ export class HomeComponent {
   // var date = new Date(Date.parse(dateString));
 
   constructor(private firestore: Firestore, private messageService: MessageService, private confirmationService: ConfirmationService) {
+    // Check if mobile on init and set initial visibility
+    this.checkIfMobile();
+    window.addEventListener('resize', () => this.checkIfMobile());
+
     this.journalEntries$ = combineLatest([
       this.activeJournalList$.pipe(
         tap(_ => this.activeJournalEntry = undefined),
@@ -90,25 +103,37 @@ export class HomeComponent {
             .map((doc) => {
               const createdDateAsDate = new Date(Date.parse(doc.createdDate))
               return { ...doc, createdDateAsDate }
-            })
-            .sort((a, b) => {
-              const dateA = a.createdDateAsDate;//new Date(Date.parse(a.createdDate));
-              const dateB = b.createdDateAsDate;//new Date(Date.parse(b.createdDate));
-              return dateB.getTime() - dateA.getTime();
             });
         })
       ),
-      this.searchTerm$.pipe(debounceTime(300))
+      this.searchTerm$.pipe(debounceTime(300)),
+      this.sortOption$
     ]).pipe(
-      map(([entries, searchTerm]) => {
-        if (!searchTerm.trim()) {
-          return entries;
+      map(([entries, searchTerm, sortOption]) => {
+        // Filter by search term
+        let filteredEntries = entries;
+        if (searchTerm.trim()) {
+          const lowerSearchTerm = searchTerm.toLowerCase();
+          filteredEntries = entries.filter(entry =>
+            (entry.title && entry.title.toLowerCase().includes(lowerSearchTerm)) ||
+            (entry.content && entry.content.toLowerCase().includes(lowerSearchTerm))
+          );
         }
-        const lowerSearchTerm = searchTerm.toLowerCase();
-        return entries.filter(entry =>
-          (entry.title && entry.title.toLowerCase().includes(lowerSearchTerm)) ||
-          (entry.content && entry.content.toLowerCase().includes(lowerSearchTerm))
-        );
+
+        // Sort entries
+        const sortedEntries = [...filteredEntries].sort((a, b) => {
+          if (sortOption === 'newest') {
+            return b.createdDateAsDate.getTime() - a.createdDateAsDate.getTime();
+          } else if (sortOption === 'oldest') {
+            return a.createdDateAsDate.getTime() - b.createdDateAsDate.getTime();
+          } else { // alphabetical
+            return a.title.localeCompare(b.title);
+          }
+        });
+
+        // Update entry count
+        this.entryCount = sortedEntries.length;
+        return sortedEntries;
       })
     );
 
@@ -126,6 +151,25 @@ export class HomeComponent {
 
   updateSearchTerm(searchTerm: string) {
     this.searchTerm$.next(searchTerm);
+  }
+
+  updateSortOption(sortOption: string) {
+    this.sortOption = sortOption;
+    this.sortOption$.next(sortOption);
+  }
+
+  checkIfMobile() {
+    const wasMobile = this.isMobile;
+    this.isMobile = window.innerWidth <= 768;
+    
+    // Set default visibility based on screen size
+    if (!wasMobile && this.isMobile) {
+      // Switching from desktop to mobile - hide sidebar
+      this.visible = false;
+    } else if (wasMobile && !this.isMobile) {
+      // Switching from mobile to desktop - show sidebar
+      this.visible = true;
+    }
   }
 
   createNewActiveEntry() {
