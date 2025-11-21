@@ -118,7 +118,7 @@
     <p-dialog header="Fullscreen Editor" [(visible)]="isFullscreen" [modal]="true" [dismissableMask]="true"
         [closeOnEscape]="true" [style]="{ width: '95vw', maxWidth: '1200px' }" [contentStyle]="{ height: '80vh' }" *ngIf="activeJournalEntry">
         <div class="fullscreen-editor-body">
-            <p-editor required [(ngModel)]="activeJournalEntry.content" [modules]="modules"
+            <p-editor #fullscreenEditor required [(ngModel)]="activeJournalEntry.content" [modules]="modules"
                 (ngModelChange)="journalContentUpdate$.next($event)" class="pEditor fullscreen-editor"></p-editor>
         </div>
     </p-dialog>

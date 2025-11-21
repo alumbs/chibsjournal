@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc, getDoc } from '@angular/fire/firestore';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BehaviorSubject, debounceTime, distinctUntilChanged, map, mergeMap, Observable, Subject, take, tap, combineLatest } from 'rxjs';
@@ -47,6 +47,23 @@ export class HomeComponent {
       ['clean']                                         // remove formatting button
     ]
   }
+
+  @ViewChild('editor') set editorRef(editorInstance: any) {
+    if (editorInstance) {
+      this.editor = editorInstance;
+      this.initializeQuillShortcuts(editorInstance);
+    }
+  }
+
+  @ViewChild('fullscreenEditor') set fullscreenEditorRef(editorInstance: any) {
+    if (editorInstance) {
+      this.fullscreenEditor = editorInstance;
+      this.initializeQuillShortcuts(editorInstance);
+    }
+  }
+
+  private editor: any;
+  private fullscreenEditor: any;
 
   journalLists: JournalList[] = [
     {
@@ -145,6 +162,129 @@ export class HomeComponent {
       .subscribe(_value => {
         this.saveActiveEntry();
       });
+  }
+
+  private initializeQuillShortcuts(editorInstance: any) {
+    // Wait for the internal Quill editor to be available on the p-editor instance
+    setTimeout(() => {
+      if (!editorInstance || !editorInstance.getQuill) {
+        console.warn('initializeQuillShortcuts: editor or getQuill is not available yet');
+        return;
+      }
+
+      const quill = editorInstance.getQuill();
+      if (quill) {
+        console.log('initializeQuillShortcuts: Quill instance created', quill);
+        // Add custom keyboard shortcut for strike-through: Ctrl+Shift+X (and Cmd+Shift+X on Mac)
+        quill.keyboard.addBinding({
+          key: 'X',
+          shiftKey: true,
+          shortKey: true
+        }, () => {
+          console.log('Strike-through shortcut handler fired');
+          const current = quill.getFormat();
+          const enableStrike = !current.strike;
+          quill.format('strike', enableStrike);
+        });
+
+        // Blockquote: Ctrl+Alt+Q (and Cmd+Alt+Q on Mac)
+        quill.keyboard.addBinding({
+          key: 'Q',
+          altKey: true,
+          shortKey: true
+        }, () => {
+          const current = quill.getFormat();
+          const enableBlockquote = !current.blockquote;
+          quill.format('blockquote', enableBlockquote);
+        });
+
+        // Code block: Ctrl+Alt+C (and Cmd+Alt+C on Mac)
+        quill.keyboard.addBinding({
+          key: 'C',
+          altKey: true,
+          shortKey: true
+        }, () => {
+          const current = quill.getFormat();
+          const enableCodeBlock = !current['code-block'];
+          quill.format('code-block', enableCodeBlock);
+        });
+
+        // Clean formatting: Ctrl+Alt+K (and Cmd+Alt+K on Mac)
+        quill.keyboard.addBinding({
+          key: 'K',
+          altKey: true,
+          shortKey: true
+        }, () => {
+          const range = quill.getSelection();
+          if (range && range.length > 0) {
+            quill.removeFormat(range.index, range.length);
+          }
+        });
+
+        // Header 1: Ctrl+Alt+1 (and Cmd+Alt+1 on Mac)
+        quill.keyboard.addBinding({
+          key: '1',
+          altKey: true,
+          shortKey: true
+        }, () => {
+          const current = quill.getFormat();
+          const isH1 = current.header === 1;
+          quill.format('header', isH1 ? false : 1);
+        });
+
+        // Header 2: Ctrl+Alt+2 (and Cmd+Alt+2 on Mac)
+        quill.keyboard.addBinding({
+          key: '2',
+          altKey: true,
+          shortKey: true
+        }, () => {
+          const current = quill.getFormat();
+          const isH2 = current.header === 2;
+          quill.format('header', isH2 ? false : 2);
+        });
+
+        this.addKeyboardShortcutsTooltips(quill);
+      } else {
+        console.warn('initializeQuillShortcuts: quill instance is undefined');
+      }
+    }, 100);
+  }
+
+  private addKeyboardShortcutsTooltips(quill: any) {
+    const toolbar = quill.getModule('toolbar');
+    if (toolbar && toolbar.container) {
+      // Define keyboard shortcuts for common formatting buttons
+      const shortcuts = {
+        'ql-bold': 'Ctrl+B',
+        'ql-italic': 'Ctrl+I', 
+        'ql-underline': 'Ctrl+U',
+        'ql-strike': 'Ctrl+Shift+X',
+        'ql-list[value="ordered"]': 'Ctrl+Shift+7',
+        'ql-list[value="bullet"]': 'Ctrl+Shift+8',
+        'ql-blockquote': 'Ctrl+Alt+Q',
+        'ql-code-block': 'Ctrl+Alt+C',
+        'ql-clean': 'Ctrl+Alt+K'
+      };
+
+      // Add tooltips to toolbar buttons
+      Object.keys(shortcuts).forEach(selector => {
+        const buttons = toolbar.container.querySelectorAll(`.${selector}`);
+        buttons.forEach((button: HTMLElement) => {
+          button.title = `Shortcut: ${shortcuts[selector as keyof typeof shortcuts]}`;
+        });
+      });
+
+      // Special handling for header buttons
+      const headerButtons = toolbar.container.querySelectorAll('.ql-header');
+      headerButtons.forEach((button: HTMLElement) => {
+        const value = button.getAttribute('value');
+        if (value === '1') {
+          button.title = 'Header 1 - Shortcut: Ctrl+Alt+1';
+        } else if (value === '2') {
+          button.title = 'Header 2 - Shortcut: Ctrl+Alt+2';
+        }
+      });
+    }
   }
 
   setActiveEntry(entry: JournalEntry) {
