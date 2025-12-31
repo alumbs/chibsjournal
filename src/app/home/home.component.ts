@@ -259,7 +259,13 @@ export class HomeComponent {
         });
 
         // Initialize checklist click handlers for checkbox and collapse
-        initializeChecklistHandlers(quill);
+        // Pass callback to trigger content update when cascade happens
+        initializeChecklistHandlers(quill, (newHtml: string) => {
+          if (this.activeJournalEntry) {
+            this.activeJournalEntry.content = newHtml;
+            this.journalContentUpdate$.next(newHtml);
+          }
+        });
 
         this.addKeyboardShortcutsTooltips(quill);
       } else {

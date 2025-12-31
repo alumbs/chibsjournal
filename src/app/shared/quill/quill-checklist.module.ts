@@ -23,8 +23,10 @@ let lastClickedLi: HTMLElement | null = null;
 /**
  * Initialize checklist event handlers for a Quill instance.
  * Uses click event to track which item was clicked, then text-change to cascade.
+ * @param quill - The Quill instance
+ * @param onContentChange - Optional callback to notify when content changes (for save triggering)
  */
-export function initializeChecklistHandlers(quill: any): void {
+export function initializeChecklistHandlers(quill: any, onContentChange?: (html: string) => void): void {
   if (!quill || !quill.root) {
     console.warn('initializeChecklistHandlers: Invalid quill instance');
     return;
@@ -91,8 +93,15 @@ export function initializeChecklistHandlers(quill: any): void {
 
       // Cascade to children
       isProcessingCascade = true;
-      cascadeCheckToChildrenFromLi(editorContainer, clickedLi, indent, checked, quill);
+      const cascadeCount = cascadeCheckToChildrenFromLi(editorContainer, clickedLi, indent, checked, quill);
       isProcessingCascade = false;
+
+      // If we cascaded any items, notify the callback to trigger save
+      if (cascadeCount > 0 && onContentChange) {
+        const newHtml = quill.root.innerHTML;
+        console.log(`Triggering content change callback after cascading ${cascadeCount} items`);
+        onContentChange(newHtml);
+      }
 
       // Update states
       captureChecklistStates(editorContainer);
@@ -130,6 +139,7 @@ function getIndentLevel(li: HTMLElement): number {
 
 /**
  * Cascade check state to child items starting from a specific clicked LI
+ * @returns The number of items that were cascaded
  */
 function cascadeCheckToChildrenFromLi(
   editorContainer: HTMLElement,
@@ -137,14 +147,14 @@ function cascadeCheckToChildrenFromLi(
   parentIndent: number,
   checked: boolean,
   quill: any
-): void {
+): number {
   // Get all checklist LI items in the editor, in document order
   const allChecklistLis = Array.from(editorContainer.querySelectorAll('ul[data-checked] > li')) as HTMLElement[];
 
   const clickedLiIndex = allChecklistLis.indexOf(clickedLi);
   if (clickedLiIndex === -1) {
     console.log('Clicked LI not found in list');
-    return;
+    return 0;
   }
 
   const parentText = clickedLi?.textContent?.substring(0, 30) || '';
@@ -170,8 +180,8 @@ function cascadeCheckToChildrenFromLi(
         const index = quill.getIndex(blot);
         console.log(`    -> Formatting to ${newListValue} at index ${index}`);
 
-        // Use 'silent' to avoid triggering another text-change, then manually update
-        quill.formatLine(index, 1, 'list', newListValue, 'silent');
+        // Use 'api' to update Quill's model (triggers save) but isProcessingCascade prevents recursion
+        quill.formatLine(index, 1, 'list', newListValue, 'api');
         cascadeCount++;
 
         // Also update the parent UL's data-checked attribute for styling
@@ -190,6 +200,7 @@ function cascadeCheckToChildrenFromLi(
   }
 
   console.log(`CASCADE COMPLETE: ${cascadeCount} items cascaded`);
+  return cascadeCount;
 }
 
 /**
