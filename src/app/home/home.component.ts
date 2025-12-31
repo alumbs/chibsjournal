@@ -346,6 +346,22 @@ export class HomeComponent {
     this.activeJournalEntry = { title: `${new Date().toDateString()} - `, content: '', createdDate: new Date().toISOString(), createdDateAsDate: new Date(), deleted: false } as JournalEntry;
   }
 
+  /**
+   * Sanitize Quill content to remove extra empty paragraphs that accumulate on save
+   */
+  private sanitizeContent(content: string): string {
+    if (!content) return content;
+
+    return content
+      // Remove multiple consecutive empty paragraphs (keep at most one)
+      .replace(/(<p><br><\/p>\s*){2,}/gi, '<p><br></p>')
+      // Remove trailing empty paragraphs
+      .replace(/(<p><br><\/p>\s*)+$/gi, '')
+      // Remove leading empty paragraphs
+      .replace(/^(\s*<p><br><\/p>)+/gi, '')
+      .trim();
+  }
+
   saveActiveEntry() {
     this.activeJournalList$.pipe(
       take(1),
@@ -354,9 +370,12 @@ export class HomeComponent {
           const journalCollection = this.getFirestoreJournalCollection(currentActiveJournal);
           const createdDate = this.activeJournalEntry.createdDateAsDate ? this.activeJournalEntry.createdDateAsDate.toISOString() : new Date().toISOString();
 
+          // Sanitize content before saving
+          const sanitizedContent = this.sanitizeContent(this.activeJournalEntry.content);
+          const entryToSave = { ...this.activeJournalEntry, content: sanitizedContent };
 
           if (this.activeJournalEntry.id === undefined) {
-            addDoc(journalCollection, { ...this.activeJournalEntry, createdDate }).then(result => {
+            addDoc(journalCollection, { ...entryToSave, createdDate }).then(result => {
               this.messageService.add({
                 severity: 'success',
                 summary: 'Journal Entry Added Successfully',
@@ -373,8 +392,7 @@ export class HomeComponent {
           } else {
             const docRef = doc(this.firestore, currentActiveJournal.firebasePath, this.activeJournalEntry.id);
 
-
-            updateDoc(docRef, { ...this.activeJournalEntry, createdDate, updatedDate: new Date().toISOString() })
+            updateDoc(docRef, { ...entryToSave, createdDate, updatedDate: new Date().toISOString() })
               .then(_result => {
                 this.messageService.add({
                   severity: 'success',

@@ -14,104 +14,22 @@
 
     // ===============================
     // Checklist Styles
+    // Quill structure: <ul data-checked="true/false"><li>...</li></ul>
     // ===============================
 
-    // Checklist container
-    .ql-checklist {
-        list-style: none;
-        padding-left: 0;
-        margin: 0.5rem 0;
+    // Checked checklist - strikethrough the list items inside
+    ul[data-checked="true"] {
+        li {
+            text-decoration: line-through;
+            color: #888;
+        }
     }
 
-    // Checklist item
-    .ql-checklist-item {
-        display: flex;
-        align-items: flex-start;
-        padding: 6px 0;
-        position: relative;
-        line-height: 1.5;
-
-        // Collapse button (chevron indicator)
-        .ql-checklist-collapse-btn {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 4px;
-            flex-shrink: 0;
-            opacity: 0.5;
-            transition: opacity 0.2s, transform 0.2s;
-            border-radius: 3px;
-
-            &::before {
-                content: '';
-                border: solid #555;
-                border-width: 0 2px 2px 0;
-                display: inline-block;
-                padding: 3px;
-                transform: rotate(45deg);
-                margin-top: -2px;
-                transition: transform 0.2s;
-            }
-
-            &:hover {
-                opacity: 1;
-                background-color: rgba(0, 0, 0, 0.05);
-            }
-        }
-
-        // Checkbox styling
-        .ql-checklist-checkbox {
-            width: 18px;
-            height: 18px;
-            margin-right: 10px;
-            margin-top: 2px;
-            cursor: pointer;
-            flex-shrink: 0;
-            accent-color: #2196F3;
-
-            &:focus {
-                outline: 2px solid #2196F3;
-                outline-offset: 2px;
-            }
-        }
-
-        // Checked state - strikethrough effect
-        &[data-checked="true"] {
-            > p,
-            > span:not(.ql-checklist-collapse-btn):not(.ql-checklist-checkbox) {
-                color: #888;
-                text-decoration: line-through;
-            }
-        }
-
-        // Collapsed state
-        &[data-collapsed="true"] {
-            .ql-checklist-collapse-btn::before {
-                transform: rotate(-45deg);
-                margin-top: 2px;
-            }
-
-            > .ql-checklist {
-                display: none !important;
-            }
-        }
-
-        // Hide collapse button when no children (use visibility to maintain layout)
-        &:not(:has(> .ql-checklist)) {
-            .ql-checklist-collapse-btn {
-                visibility: hidden;
-            }
-        }
-
-        // Indentation levels for nested items
-        @for $i from 1 through 9 {
-            &.ql-indent-#{$i},
-            &[data-indent="#{$i}"] {
-                padding-left: #{$i * 28}px;
-            }
+    // Unchecked checklist - normal styling
+    ul[data-checked="false"] {
+        li {
+            text-decoration: none;
+            color: inherit;
         }
     }
 
