@@ -51,7 +51,11 @@ export class HomeComponent {
       [{ 'align': [] }],
 
       ['clean']                                         // remove formatting button
-    ]
+    ],
+    // Disable matchVisual to prevent Quill from adding extra <p><br></p> around lists
+    clipboard: {
+      matchVisual: false
+    }
   }
 
   @ViewChild('editor') set editorRef(editorInstance: any) {
