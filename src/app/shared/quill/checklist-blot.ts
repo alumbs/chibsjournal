@@ -62,31 +62,34 @@ export class ChecklistItem extends Block {
   }
 
   format(name: string, value: any): void {
+    // Access domNode via index signature for TypeScript compatibility with Quill
+    const domNode = (this as any)['domNode'] as HTMLElement;
+
     if (name === 'checklist-item' || name === ChecklistItem.blotName) {
       if (value) {
         const normalizedValue: ChecklistValue = typeof value === 'boolean'
           ? { checked: false, collapsed: false }
           : value;
 
-        this.domNode.setAttribute('data-checked', String(normalizedValue.checked || false));
-        this.domNode.setAttribute('data-collapsed', String(normalizedValue.collapsed || false));
+        domNode.setAttribute('data-checked', String(normalizedValue.checked || false));
+        domNode.setAttribute('data-collapsed', String(normalizedValue.collapsed || false));
 
-        const checkbox = this.domNode.querySelector('.ql-checklist-checkbox') as HTMLInputElement;
+        const checkbox = domNode.querySelector('.ql-checklist-checkbox') as HTMLInputElement;
         if (checkbox) {
           checkbox.checked = normalizedValue.checked || false;
         }
       }
     } else if (name === 'indent') {
       // Handle indentation for nesting
-      const indentClasses = Array.from(this.domNode.classList)
-        .filter((c: string) => c.startsWith('ql-indent-'));
-      indentClasses.forEach((c: string) => this.domNode.classList.remove(c));
+      const classList = Array.from(domNode.classList) as string[];
+      const indentClasses = classList.filter((c: string) => c.startsWith('ql-indent-'));
+      indentClasses.forEach((c: string) => domNode.classList.remove(c));
 
       if (value && value > 0) {
-        this.domNode.classList.add(`ql-indent-${value}`);
-        this.domNode.setAttribute('data-indent', String(value));
+        domNode.classList.add(`ql-indent-${value}`);
+        domNode.setAttribute('data-indent', String(value));
       } else {
-        this.domNode.removeAttribute('data-indent');
+        domNode.removeAttribute('data-indent');
       }
     } else {
       super.format(name, value);
@@ -106,4 +109,4 @@ export class ChecklistContainer extends Container {
 }
 
 // Set up parent-child relationship for nesting support
-ChecklistItem.allowedChildren = [ChecklistContainer];
+(ChecklistItem as any)['allowedChildren'] = [ChecklistContainer];

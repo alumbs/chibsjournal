@@ -220,7 +220,7 @@
 
         .deleteJournalEntrySection {
             display: flex;
-            justify-content: end;
+            justify-content: flex-end;
 
             .deleteJournalEntryIcon {
                 color: firebrick;
