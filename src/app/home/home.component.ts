@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/
 import { Firestore, collectionData, collection, addDoc, CollectionReference, DocumentData, updateDoc, doc, deleteDoc, getDoc } from '@angular/fire/firestore';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { BehaviorSubject, debounceTime, distinctUntilChanged, map, mergeMap, Observable, Subject, take, tap, combineLatest } from 'rxjs';
+import { registerChecklistBlot, initializeChecklistHandlers, toggleChecklist } from '../shared/quill/quill-checklist.module';
 
 interface JournalEntry {
   id: string,
@@ -26,13 +27,18 @@ interface JournalList {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeComponent {
+  // Register checklist blot before any Quill instances are created
+  static {
+    registerChecklistBlot();
+  }
+
   modules = {
     toolbar: [
       ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
       ['blockquote', 'code-block'],
 
       [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'list': 'check' }],  // added checklist
       [{ 'script': 'sub' }, { 'script': 'super' }],      // superscript/subscript
       [{ 'indent': '-1' }, { 'indent': '+1' }],          // outdent/indent
       [{ 'direction': 'rtl' }],                         // text direction
@@ -243,6 +249,18 @@ export class HomeComponent {
           quill.format('header', isH2 ? false : 2);
         });
 
+        // Checklist: Ctrl+Shift+9 (and Cmd+Shift+9 on Mac)
+        quill.keyboard.addBinding({
+          key: '9',
+          shiftKey: true,
+          shortKey: true
+        }, () => {
+          toggleChecklist(quill);
+        });
+
+        // Initialize checklist click handlers for checkbox and collapse
+        initializeChecklistHandlers(quill);
+
         this.addKeyboardShortcutsTooltips(quill);
       } else {
         console.warn('initializeQuillShortcuts: quill instance is undefined');
@@ -256,11 +274,12 @@ export class HomeComponent {
       // Define keyboard shortcuts for common formatting buttons
       const shortcuts = {
         'ql-bold': 'Ctrl+B',
-        'ql-italic': 'Ctrl+I', 
+        'ql-italic': 'Ctrl+I',
         'ql-underline': 'Ctrl+U',
         'ql-strike': 'Ctrl+Shift+X',
         'ql-list[value="ordered"]': 'Ctrl+Shift+7',
         'ql-list[value="bullet"]': 'Ctrl+Shift+8',
+        'ql-list[value="check"]': 'Ctrl+Shift+9',
         'ql-blockquote': 'Ctrl+Alt+Q',
         'ql-code-block': 'Ctrl+Alt+C',
         'ql-clean': 'Ctrl+Alt+K'
