@@ -14,7 +14,6 @@ export function registerChecklistBlot(): void {
     return;
   }
   isRegistered = true;
-  console.log('Checklist module initialized');
 }
 
 // Track the last clicked LI element
@@ -28,7 +27,6 @@ let lastClickedLi: HTMLElement | null = null;
  */
 export function initializeChecklistHandlers(quill: any, onContentChange?: (html: string) => void): void {
   if (!quill || !quill.root) {
-    console.warn('initializeChecklistHandlers: Invalid quill instance');
     return;
   }
 
@@ -43,12 +41,11 @@ export function initializeChecklistHandlers(quill: any, onContentChange?: (html:
     const li = target.closest('ul[data-checked] > li') as HTMLElement;
     if (li) {
       lastClickedLi = li;
-      console.log(`MOUSEDOWN on: "${li.textContent?.substring(0, 30)}"`);
     }
   });
 
   // Listen to Quill's text-change event
-  quill.on('text-change', (delta: any, oldDelta: any, source: string) => {
+  quill.on('text-change', (delta: any, _oldDelta: any, source: string) => {
     if (isProcessingCascade) return;
     if (source !== 'user') return; // Only process user-initiated changes
 
@@ -65,13 +62,10 @@ export function initializeChecklistHandlers(quill: any, onContentChange?: (html:
 
     if (!hasListChange) return;
 
-    console.log('Text change with list modification detected');
-
     // Small delay to let DOM update
     setTimeout(() => {
       // Use the last clicked LI if available
       if (!lastClickedLi || !editorContainer.contains(lastClickedLi)) {
-        console.log('No clicked LI tracked');
         captureChecklistStates(editorContainer);
         return;
       }
@@ -79,17 +73,13 @@ export function initializeChecklistHandlers(quill: any, onContentChange?: (html:
       const clickedLi = lastClickedLi;
       const clickedUl = clickedLi.closest('ul[data-checked]') as HTMLElement;
       if (!clickedUl) {
-        console.log('No checklist UL found');
         captureChecklistStates(editorContainer);
         return;
       }
 
       const currentState = clickedUl.getAttribute('data-checked');
       const indent = getIndentLevel(clickedLi);
-      const liText = clickedLi.textContent?.substring(0, 40) || '';
       const checked = currentState === 'true';
-
-      console.log(`CLICKED: "${liText}" | indent: ${indent} | checked: ${checked}`);
 
       // Cascade to children
       isProcessingCascade = true;
@@ -99,7 +89,6 @@ export function initializeChecklistHandlers(quill: any, onContentChange?: (html:
       // If we cascaded any items, notify the callback to trigger save
       if (cascadeCount > 0 && onContentChange) {
         const newHtml = quill.root.innerHTML;
-        console.log(`Triggering content change callback after cascading ${cascadeCount} items`);
         onContentChange(newHtml);
       }
 
@@ -110,8 +99,6 @@ export function initializeChecklistHandlers(quill: any, onContentChange?: (html:
       lastClickedLi = null;
     }, 10);
   });
-
-  console.log('Checklist handlers initialized with click tracking');
 }
 
 /**
@@ -153,12 +140,8 @@ function cascadeCheckToChildrenFromLi(
 
   const clickedLiIndex = allChecklistLis.indexOf(clickedLi);
   if (clickedLiIndex === -1) {
-    console.log('Clicked LI not found in list');
     return 0;
   }
-
-  const parentText = clickedLi?.textContent?.substring(0, 30) || '';
-  console.log(`CASCADE START: "${parentText}" | parentIndent: ${parentIndent} | checked: ${checked} | totalLis: ${allChecklistLis.length}`);
 
   let cascadeCount = 0;
   const newListValue = checked ? 'checked' : 'unchecked';
@@ -168,17 +151,13 @@ function cascadeCheckToChildrenFromLi(
   for (let i = clickedLiIndex + 1; i < allChecklistLis.length; i++) {
     const li = allChecklistLis[i];
     const liIndent = getIndentLevel(li);
-    const liText = li.textContent?.substring(0, 30) || '';
 
     // If this item has higher indent, it's a child - cascade the check state
     if (liIndent > parentIndent) {
-      console.log(`  CHILD FOUND: "${liText}" | indent: ${liIndent}`);
-
       // Use Quill's API to change the list format for this line
       const blot = Quill.find(li);
       if (blot) {
         const index = quill.getIndex(blot);
-        console.log(`    -> Formatting to ${newListValue} at index ${index}`);
 
         // Use 'api' to update Quill's model (triggers save) but isProcessingCascade prevents recursion
         quill.formatLine(index, 1, 'list', newListValue, 'api');
@@ -189,17 +168,14 @@ function cascadeCheckToChildrenFromLi(
         if (liParentUl && !processedUls.has(liParentUl)) {
           liParentUl.setAttribute('data-checked', String(checked));
           processedUls.add(liParentUl);
-          console.log(`    -> Updated parent UL data-checked to ${checked}`);
         }
       }
     } else {
       // Reached an item at same or lower indent - stop cascading
-      console.log(`  STOP: "${liText}" | indent: ${liIndent} (same or lower than parent)`);
       break;
     }
   }
 
-  console.log(`CASCADE COMPLETE: ${cascadeCount} items cascaded`);
   return cascadeCount;
 }
 
